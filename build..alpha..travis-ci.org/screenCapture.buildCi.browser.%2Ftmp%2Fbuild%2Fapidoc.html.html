@@ -54,12 +54,447 @@
 
     <li class="apidocModuleLi"><a href="#apidoc.module.grunt-init">module grunt-init</a><ol>
 
+        <li>
+
+            <span class="apidocSignatureSpan">object <span class="apidocSignatureSpan">grunt-init.</span>git</span>
+
+        </li>
+
+        <li>
+
+            <span class="apidocSignatureSpan">object <span class="apidocSignatureSpan">grunt-init.</span>helpers</span>
+
+        </li>
+
+        <li>
+
+            <span class="apidocSignatureSpan">object <span class="apidocSignatureSpan">grunt-init.</span>prompt</span>
+
+        </li>
+
+    </ol></li>
+
+    <li class="apidocModuleLi"><a href="#apidoc.module.grunt-init.git">module grunt-init.git</a><ol>
+
+        <li>
+
+            <a class="apidocElementLiA" href="#apidoc.element.grunt-init.git.init">
+            function <span class="apidocSignatureSpan">grunt-init.git.</span>init
+            <span class="apidocSignatureSpan">(grunt)</span>
+            </a>
+
+        </li>
+
+    </ol></li>
+
+    <li class="apidocModuleLi"><a href="#apidoc.module.grunt-init.helpers">module grunt-init.helpers</a><ol>
+
+        <li>
+
+            <a class="apidocElementLiA" href="#apidoc.element.grunt-init.helpers.init">
+            function <span class="apidocSignatureSpan">grunt-init.helpers.</span>init
+            <span class="apidocSignatureSpan">(grunt)</span>
+            </a>
+
+        </li>
+
+    </ol></li>
+
+    <li class="apidocModuleLi"><a href="#apidoc.module.grunt-init.prompt">module grunt-init.prompt</a><ol>
+
+        <li>
+
+            <a class="apidocElementLiA" href="#apidoc.element.grunt-init.prompt.init">
+            function <span class="apidocSignatureSpan">grunt-init.prompt.</span>init
+            <span class="apidocSignatureSpan">(grunt, helpers)</span>
+            </a>
+
+        </li>
+
     </ol></li>
 
 </ol></div>
 
 <div class="apidocSectionDiv">
 <h1><a href="#apidoc.module.grunt-init" id="apidoc.module.grunt-init">module grunt-init</a></h1>
+
+
+
+
+
+
+
+</div>
+
+<div class="apidocSectionDiv">
+<h1><a href="#apidoc.module.grunt-init.git" id="apidoc.module.grunt-init.git">module grunt-init.git</a></h1>
+
+
+    <h2>
+        <a href="#apidoc.element.grunt-init.git.init" id="apidoc.element.grunt-init.git.init">
+        function <span class="apidocSignatureSpan">grunt-init.git.</span>init
+        <span class="apidocSignatureSpan">(grunt)</span>
+        </a>
+    </h2>
+    <ul>
+    <li>description and source-code<pre class="apidocCodePre">init = function (grunt) {
+  var exports = {};
+
+  // Get the git origin url from the current repo (if possible).
+  exports.origin = function(done) {
+    grunt.util.spawn({
+      cmd: 'git',
+      args: ['remote', '-v']
+    }, function(err, result) {
+      var re = /^origin\s/;
+      var lines;
+      if (!err) {
+        lines = String(result).split('\n').filter(re.test, re);
+        if (lines.length &gt; 0) {
+          done(null, lines[0].split(/\s/)[1]);
+          return;
+        }
+      }
+      done(true, 'none');
+    });
+  };
+
+  // Generate a GitHub web URL from a GitHub repo URI.
+  var githubUrlRegex = /^.+(?:@|:\/\/)(github.com)[:\/](.+?)(?:\.git|\/)?$/;
+  exports.githubUrl = function(uri, suffix) {
+    var matches = githubUrlRegex.exec(uri);
+    if (!matches) { return null; }
+    var url = 'https://' + matches[1] + '/' + matches[2];
+    if (suffix) {
+      url += '/' + suffix.replace(/^\//, '');
+    }
+    return url;
+  };
+
+  // Get the given key from the git config, if it exists.
+  exports.config = function(key, done) {
+    grunt.util.spawn({
+      cmd: 'git',
+      args: ['config', '--get', key]
+    }, function(err, result) {
+      if (err) {
+        done(true, 'none');
+        return;
+      }
+      done(null, String(result));
+    });
+  };
+
+  return exports;
+}</pre></li>
+    <li>example usage<pre class="apidocCodePre">...
+var path = require('path');
+
+// External libs.
+var semver = require('semver');
+var _ = require('lodash');
+
+// Internal libs.
+var git = require('./lib/git').<span class="apidocCodeKeywordSpan">init</span>(grunt);
+var helpers = require('./lib/helpers').init(grunt);
+var prompt = require('./lib/prompt').init(grunt, helpers);
+
+// The "init" task needs separate delimiters to avoid conflicts, so the &lt;&gt;
+// are replaced with {}. Otherwise, they behave the same.
+grunt.template.addDelimiters('init', '{%', '%}');
+...</pre></li>
+    </ul>
+
+
+</div>
+
+<div class="apidocSectionDiv">
+<h1><a href="#apidoc.module.grunt-init.helpers" id="apidoc.module.grunt-init.helpers">module grunt-init.helpers</a></h1>
+
+
+    <h2>
+        <a href="#apidoc.element.grunt-init.helpers.init" id="apidoc.element.grunt-init.helpers.init">
+        function <span class="apidocSignatureSpan">grunt-init.helpers.</span>init
+        <span class="apidocSignatureSpan">(grunt)</span>
+        </a>
+    </h2>
+    <ul>
+    <li>description and source-code<pre class="apidocCodePre">init = function (grunt) {
+  var exports = {};
+
+  // Nodejs libs.
+  var path = require('path');
+  var _ = require('lodash');
+
+  // Windows?
+  var win32 = process.platform === 'win32';
+
+  // Access files in the user's ".grunt-init" folder.
+  exports.userDir = function() {
+    var dirpath = path.join.apply(path, arguments);
+    var homepath = process.env[win32 ? 'USERPROFILE' : 'HOME'];
+    return path.resolve(homepath, '.grunt-init', dirpath);
+  };
+
+  // An array of all available license files.
+  exports.availableLicenses = function() {
+    return exports.expand({filter: 'isFile'}, 'licenses/*').map(function(obj) {
+      return path.basename(String(obj)).replace(/^LICENSE-/, '');
+    });
+  };
+
+  // Return an array of all task-specific file paths that match the given
+  // wildcard patterns. Instead of returing a string for each file path, return
+  // an object with useful properties. When coerced to String, each object will
+  // yield its absolute path.
+  exports.expand = function() {
+    var args = grunt.util.toArray(arguments);
+    // If the first argument is an options object, remove and save it for later.
+    var options = grunt.util.kindOf(args[0]) === 'object' ? args.shift() : {};
+    // Use the first argument if it's an Array, otherwise convert the arguments
+    // object to an array and use that.
+    var patterns = Array.isArray(args[0]) ? args[0] : args;
+    var filepaths = {};
+    // When any returned array item is used in a string context, return the
+    // absolute path.
+    var toString = function() { return this.abs; };
+    // Iterate over all searchDirs.
+    exports.searchDirs.forEach(function(dirpath) {
+      var opts = Object.create(options);
+      // Set the cwd so the grunt.file.expand* method can match relatively.
+      opts.cwd = dirpath;
+      // Create an array of absolute patterns, preceded by the options object.
+      var args = [opts].concat(patterns);
+      // Expand the paths in case a wildcard was passed.
+      grunt.file.expand.apply(null, args).forEach(function(relpath) {
+        if (relpath in filepaths) { return; }
+        // Update object at this relpath only if it doesn't already exist.
+        filepaths[relpath] = {
+          abs: dirpath + '/' + relpath,
+          rel: relpath,
+          base: dirpath,
+          toString: toString
+        };
+      });
+    });
+    // Return an array of objects.
+    return Object.keys(filepaths).map(function(relpath) {
+      return filepaths[relpath];
+    });
+  };
+
+  // Get all templates.
+  exports.getTemplates = function() {
+    var templates = {};
+    exports.expand({filter: 'isFile'}, '*/template.{js,coffee}').forEach(function(fileobj) {
+      templates[fileobj.rel.split('/')[0]] = require(fileobj.abs);
+    });
+    return templates;
+  };
+
+  // Get a single task file path.
+  exports.getFile = function() {
+    var filepath = path.join.apply(path, arguments);
+    var fileobj = exports.expand(filepath)[0];
+    return fileobj ? String(fileobj) : null;
+  };
+
+  exports.searchDirs = [];
+
+  // Initialize searchDirs.
+  exports.initSearchDirs = function(name) {
+    exports.searchDirs = [];
+    // Add dirname of specified template file to searchDirs.
+    if (name &amp;&amp; grunt.file.exists(name)) {
+      exports.searchDirs.push(path.dirname(name));
+      name = path.basename(path.resolve(name), '.js');
+    }
+    // Add ~/.grunt-init/ to searchDirs.
+    var initdir = exports.userDir();
+    if (initdir &amp;&amp; grunt.file.exists(initdir)) {
+      exports.searchDirs.push(initdir);
+    }
+    // Add internal templates to searchDirs.
+    exports.searchDirs.push(path.resolve(__dirname, '../../templates'));
+
+    // Search dirs should be unique and fully normalized absolute paths.
+    exports.searchDirs = _.uniq(exports.searchDirs).map(function(filepath) {
+      return path.resolve(filepath);
+    });
+
+    return name;
+  };
+
+  // Read JSON defaults from task files (if they exist), merging them into one.
+  // data object.
+  var readDefaults = {};
+  exports.readDefaults = function() {
+    var filepath = path.join.apply(path, arguments);
+    var result = readDefaults[filepath];
+    var filepaths; ...</pre></li>
+    <li>example usage<pre class="apidocCodePre">...
+var path = require('path');
+
+// External libs.
+var semver = require('semver');
+var _ = require('lodash');
+
+// Internal libs.
+var git = require('./lib/git').<span class="apidocCodeKeywordSpan">init</span>(grunt);
+var helpers = require('./lib/helpers').init(grunt);
+var prompt = require('./lib/prompt').init(grunt, helpers);
+
+// The "init" task needs separate delimiters to avoid conflicts, so the &lt;&gt;
+// are replaced with {}. Otherwise, they behave the same.
+grunt.template.addDelimiters('init', '{%', '%}');
+...</pre></li>
+    </ul>
+
+
+</div>
+
+<div class="apidocSectionDiv">
+<h1><a href="#apidoc.module.grunt-init.prompt" id="apidoc.module.grunt-init.prompt">module grunt-init.prompt</a></h1>
+
+
+    <h2>
+        <a href="#apidoc.element.grunt-init.prompt.init" id="apidoc.element.grunt-init.prompt.init">
+        function <span class="apidocSignatureSpan">grunt-init.prompt.</span>init
+        <span class="apidocSignatureSpan">(grunt, helpers)</span>
+        </a>
+    </h2>
+    <ul>
+    <li>description and source-code<pre class="apidocCodePre">init = function (grunt, helpers) {
+  var exports = {};
+
+  // Expose prompts object so that prompts can be added or modified.
+  exports.prompts = {};
+  var useDefaults = grunt.option('default');
+
+  // Prompt user to override default values passed in obj.
+  exports.process = function(defaults, options, done) {
+    // If defaults are omitted, shuffle arguments a bit.
+    if (grunt.util.kindOf(defaults) === 'array') {
+      done = options;
+      options = defaults;
+      defaults = {};
+    }
+
+    // Keep track of any "sanitize" functions for later use.
+    var sanitize = {};
+    options.forEach(function(option) {
+      if (option.sanitize) {
+        sanitize[option.name] = option.sanitize;
+      }
+    });
+
+    // Add one final "are you sure?" prompt.
+    if (options.length &gt; 0) {
+      options.push({
+        message: 'Do you need to make any changes to the above before continuing?'.green,
+        name: 'ANSWERS_VALID',
+        default: 'y/N'
+      });
+    }
+
+    // Ask user for input. This is in an IIFE because it has to execute at least
+    // once, and might be repeated.
+    (function ask() {
+      if (useDefaults) {
+        grunt.log.subhead('Using defaults...');
+      } else {
+        grunt.log.subhead('Please answer the following:');
+      }
+      var result = _.clone(defaults);
+      // Loop over each prompt option.
+      async.forEachSeries(options, function(option, done) {
+        var defaultValue;
+        async.forEachSeries(['default', 'altDefault'], function(prop, next) {
+          if (typeof option[prop] === 'function') {
+            // If the value is a function, execute that function, using the
+            // value passed into the return callback as the new default value.
+            option[prop](defaultValue, result, function(err, value) {
+              defaultValue = String(value);
+              next();
+            });
+          } else {
+            // Otherwise, if the value actually exists, use it.
+            if (prop in option) {
+              defaultValue = option[prop];
+            }
+            next();
+          }
+        }, function() {
+          // Handle errors (there should never be errors).
+          option.default = defaultValue;
+          delete option.altDefault;
+          // Wrap validator so that answering '?' always fails.
+          var validator = option.validator;
+          option.validator = function(line, next) {
+            if (line === '?') {
+              return next(false);
+            } else if (validator) {
+              if (validator.test) {
+                return next(validator.test(line));
+              } else if (typeof validator === 'function') {
+                return validator.length &lt; 2 ? next(validator(line)) : validator(line, next);
+              }
+            }
+            next(true);
+          };
+          // Actually get user input.
+          if (useDefaults) {
+            result[option.name] = option.default;
+            done();
+          } else {
+            prompt.start();
+            prompt.getInput(option, function(err, line) {
+              if (err) { return done(err); }
+              option.validator = validator;
+              result[option.name] = line;
+              done();
+            });
+          }
+        });
+      }, function() {
+        // After all prompt questions have been answered...
+        if (/n/i.test(result.ANSWERS_VALID)) {
+          // User accepted all answers. Suspend prompt.
+          prompt.pause();
+          // Clean up.
+          delete result.ANSWERS_VALID;
+          // Iterate over all results.
+          async.forEachSeries(Object.keys(result), function(name, next) {
+            // If this value needs to be sanitized, process it now.
+            if (sanitize[name]) {
+              sanitize[name](result[name], result, function(err, value) {
+                if (err) {
+                  result[name] = err;
+                } else if (arguments.length === 2) {
+                  result[name] = value === 'none' ? '' : value;
+                }
+                next();
+              });
+            } else {
+              if (result[name] === 'none') { ...</pre></li>
+    <li>example usage<pre class="apidocCodePre">...
+var path = require('path');
+
+// External libs.
+var semver = require('semver');
+var _ = require('lodash');
+
+// Internal libs.
+var git = require('./lib/git').<span class="apidocCodeKeywordSpan">init</span>(grunt);
+var helpers = require('./lib/helpers').init(grunt);
+var prompt = require('./lib/prompt').init(grunt, helpers);
+
+// The "init" task needs separate delimiters to avoid conflicts, so the &lt;&gt;
+// are replaced with {}. Otherwise, they behave the same.
+grunt.template.addDelimiters('init', '{%', '%}');
+...</pre></li>
+    </ul>
+
 
 </div>
 
